@@ -43,6 +43,7 @@ import {
   BlockResponse,
   BlockResultsResponse,
 } from '../indexer/types';
+import { IndexWrapper } from './celestia';
 
 const logger = getLogger('fetch');
 
@@ -291,10 +292,16 @@ export function wrapTx(
               block.block.txs[idx],
             ));
           } catch (e) {
-            throw new Error(
-              `Failed to decode transaction idx="${idx}" at height="${block.block.header.height}"`,
-              { cause: e },
-            );
+            try {
+              return ((this.decodedTx as any) = decodeTxRaw(
+                IndexWrapper.decode(block.block.txs[idx]).tx,
+              ));
+            } catch (error) {
+              throw new Error(
+                `Failed to decode transaction idx="${idx}" at height="${block.block.header.height}"`,
+                { cause: e },
+              );
+            }
           }
         },
       }))
