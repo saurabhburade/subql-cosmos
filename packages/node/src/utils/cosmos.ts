@@ -287,6 +287,7 @@ export function wrapTx(
         hash: toHex(sha256(block.block.txs[idx])).toUpperCase(),
         get decodedTx() {
           delete (this as any).decodedTx;
+
           try {
             return ((this.decodedTx as any) = decodeTxRaw(
               block.block.txs[idx],
@@ -303,7 +304,7 @@ export function wrapTx(
                 ));
               } catch (error2) {
                 throw new Error(
-                  `Failed to decode transaction idx="${idx}" at height="${block.block.header.height}"`,
+                  `Failed to decode transaction idx="${idx}" at height="${block.block.header.height}" data="${block.block.txs[idx]}"`,
                   { cause: e },
                 );
               }
