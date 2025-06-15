@@ -37,6 +37,7 @@ import {
 } from '@subql/types-cosmos';
 import { isObjectLike, omit } from 'lodash';
 import { isLong } from 'long';
+
 import { SubqlProjectBlockFilter } from '../configure/SubqueryProject';
 import { CosmosClient } from '../indexer/api.service';
 import {
@@ -44,6 +45,7 @@ import {
   BlockResponse,
   BlockResultsResponse,
 } from '../indexer/types';
+import { BlobTx, IndexWrapper, MalleatedTx } from './celestia';
 
 const logger = getLogger('fetch');
 
@@ -278,15 +280,34 @@ export function wrapTx(
         hash: toHex(sha256(block.block.txs[idx])).toUpperCase(),
         get decodedTx() {
           delete (this as any).decodedTx;
+
           try {
             return ((this.decodedTx as any) = decodeTxRaw(
               block.block.txs[idx],
             ));
           } catch (e) {
-            throw new Error(
-              `Failed to decode transaction idx="${idx}" at height="${block.block.header.height}"`,
-              { cause: e },
-            );
+            try {
+              return ((this.decodedTx as any) = decodeTxRaw(
+                IndexWrapper.decode(block.block.txs[idx]).tx,
+              ));
+            } catch (error) {
+              try {
+                return ((this.decodedTx as any) = decodeTxRaw(
+                  BlobTx.decode(block.block.txs[idx]).tx,
+                ));
+              } catch (error2) {
+                try {
+                  return ((this.decodedTx as any) = decodeTxRaw(
+                    MalleatedTx.decode(block.block.txs[idx]).tx,
+                  ));
+                } catch (error3) {
+                  throw new Error(
+                    `Failed to decode transaction idx="${idx}" at height="${block.block.header.height}"`,
+                    { cause: e },
+                  );
+                }
+              }
+            }
           }
         },
       }))
