@@ -288,12 +288,12 @@ export function wrapTx(
           } catch (e) {
             try {
               return ((this.decodedTx as any) = decodeTxRaw(
-                IndexWrapper.decode(block.block.txs[idx]).tx,
+                BlobTx.decode(block.block.txs[idx]).tx,
               ));
             } catch (error) {
               try {
                 return ((this.decodedTx as any) = decodeTxRaw(
-                  BlobTx.decode(block.block.txs[idx]).tx,
+                  IndexWrapper.decode(block.block.txs[idx]).tx,
                 ));
               } catch (error2) {
                 try {
