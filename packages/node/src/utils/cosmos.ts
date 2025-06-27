@@ -276,7 +276,7 @@ export function wrapTx(
       .map((tx, idx) => {
         let hash = toHex(sha256(block.block.txs[idx])).toUpperCase();
         try {
-          decodeTxRaw(BlobTx.decode(element).tx);
+          decodeTxRaw(BlobTx.decode(block.block.txs[idx]).tx);
           hash = toHex(
             sha256(Buffer.from(BlobTx.decode(block.block.txs[idx]).tx)),
           ).toUpperCase();
