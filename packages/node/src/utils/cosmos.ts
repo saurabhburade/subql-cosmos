@@ -273,44 +273,55 @@ export function wrapTx(
 ): CosmosTransaction[] {
   return (
     txResults
-      .map((tx, idx) => ({
-        idx,
-        block: block,
-        tx,
-        hash: toHex(sha256(block.block.txs[idx])).toUpperCase(),
-        get decodedTx() {
-          delete (this as any).decodedTx;
+      .map((tx, idx) => {
+        let hash = toHex(sha256(block.block.txs[idx])).toUpperCase();
+        try {
+          decodeTxRaw(BlobTx.decode(element).tx);
+          hash = toHex(
+            sha256(Buffer.from(BlobTx.decode(block.block.txs[idx]).tx)),
+          ).toUpperCase();
+        } catch (e) {
+          hash = toHex(sha256(block.block.txs[idx])).toUpperCase();
+        }
+        return {
+          idx,
+          block: block,
+          tx,
+          hash: hash,
+          get decodedTx() {
+            delete (this as any).decodedTx;
 
-          try {
-            return ((this.decodedTx as any) = decodeTxRaw(
-              block.block.txs[idx],
-            ));
-          } catch (e) {
             try {
               return ((this.decodedTx as any) = decodeTxRaw(
-                BlobTx.decode(block.block.txs[idx]).tx,
+                block.block.txs[idx],
               ));
-            } catch (error) {
+            } catch (e) {
               try {
                 return ((this.decodedTx as any) = decodeTxRaw(
-                  IndexWrapper.decode(block.block.txs[idx]).tx,
+                  BlobTx.decode(block.block.txs[idx]).tx,
                 ));
-              } catch (error2) {
+              } catch (error) {
                 try {
                   return ((this.decodedTx as any) = decodeTxRaw(
-                    MalleatedTx.decode(block.block.txs[idx]).tx,
+                    IndexWrapper.decode(block.block.txs[idx]).tx,
                   ));
-                } catch (error3) {
-                  throw new Error(
-                    `Failed to decode transaction idx="${idx}" at height="${block.block.header.height}"`,
-                    { cause: e },
-                  );
+                } catch (error2) {
+                  try {
+                    return ((this.decodedTx as any) = decodeTxRaw(
+                      MalleatedTx.decode(block.block.txs[idx]).tx,
+                    ));
+                  } catch (error3) {
+                    throw new Error(
+                      `Failed to decode transaction idx="${idx}" at height="${block.block.header.height}"`,
+                      { cause: e },
+                    );
+                  }
                 }
               }
             }
-          }
-        },
-      }))
+          },
+        };
+      })
       // Somtimes there might be other data types in the transactions, ExtendedCommitInfo, we filter them out here so that `decodedTx` doesn't fail
       .filter((tx) => tx.tx.log !== 'tx parse error')
   );
